@@ -8,6 +8,18 @@ Windows 11 で Netflix に表示された字幕を読み取り、PC 上の Ollam
 - 翻訳のみ表示する場合は元の字幕と同じ位置に、二言語表示では元の字幕の上に訳文を表示します。
 - 翻訳処理は PC 内で行い、プレーヤーに表示済みの字幕テキストを使用します。
 
+## 推奨環境
+
+| 項目 | 推奨構成 |
+| --- | --- |
+| OS | Windows 11 x64。同梱の字幕拡張機能を使う場合は Microsoft Edge が必要です。 |
+| GPU | NVIDIA GeForce RTX、VRAM 8 GB 以上、CUDA 対応の NVIDIA ドライバー。 |
+| メモリ | Netflix、ブラウザー、ローカルモデルの動作に 16 GB 以上を推奨します。 |
+| ストレージ | インストール用の一時ファイル、Ollama、既定モデル用に SSD の空き容量 10 GB 以上を推奨します。 |
+| モデル | 既定は `qwen3:4b-instruct`。初回のモデルダウンロードは約 2.5 GB です。 |
+
+検証環境は Core Ultra 9 285H、RTX 5060 Laptop GPU（VRAM 8 GB）、メモリ 32 GB です。既定モデルは測定時に約 2.68 GiB の VRAM を使用しました。CPU 推論や推奨構成を下回る PC での再生中の遅延は未検証です。 [テスト報告（中国語）](测试报告.md)
+
 ## 使い方
 
 1. [GitHub Releases](https://github.com/Tarppbp/netflix-subtitle-translator-windows/releases/latest) から Windows 用 ZIP をダウンロードして展開し、`Install.cmd` を実行します。初回は Ollama と既定の Qwen3 モデルをダウンロードします。

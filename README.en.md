@@ -8,6 +8,18 @@ Translate Netflix subtitles as they appear on Windows 11. Ollama runs the transl
 - Show the translation in the original position, or display it above the original subtitles in bilingual mode.
 - Subtitle text stays on your PC. The tool reads subtitles the player has already displayed.
 
+## Recommended configuration
+
+| Component | Recommendation |
+| --- | --- |
+| OS | Windows 11 x64. Microsoft Edge is required for the included subtitle extension. |
+| GPU | NVIDIA GeForce RTX with at least 8 GB of VRAM and a CUDA-capable NVIDIA driver. |
+| Memory | 16 GB of RAM or more for Netflix, the browser, and the local model. |
+| Storage | At least 10 GB of free SSD space for temporary installation files, Ollama, and the default model. |
+| Model | `qwen3:4b-instruct` by default, with an initial model download of about 2.5 GB. |
+
+The test PC had a Core Ultra 9 285H, an RTX 5060 Laptop GPU with 8 GB of VRAM, and 32 GB of RAM. The default model used about 2.68 GiB of VRAM in one test. Playback latency with CPU inference or lower specifications remains unverified. [Test report](测试报告.md)
+
 ## Getting started
 
 1. Download the Windows ZIP from [GitHub Releases](https://github.com/Tarppbp/netflix-subtitle-translator-windows/releases/latest), extract it, and run `Install.cmd`. The first installation downloads Ollama and the default Qwen3 model.
