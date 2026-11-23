@@ -1,6 +1,8 @@
 globalThis.subtitleSettings = Object.freeze({
   enabled: false,
   model: "qwen3:4b-instruct",
+  sourceLanguage: "ja",
+  targetLanguage: "zh-CN",
   chineseOnly: false,
   followSubtitle: true,
   context: true,

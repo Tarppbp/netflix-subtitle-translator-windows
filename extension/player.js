@@ -118,7 +118,8 @@
     try {
       const result = await chrome.runtime.sendMessage({
         type: "translate", cue: current, context: config.context ? context : [],
-        model: config.model, episode: route
+        model: config.model, episode: route,
+        sourceLanguage: config.sourceLanguage, targetLanguage: config.targetLanguage
       });
       if (revision !== token || read() !== current) return;
       if (!result?.text) throw new Error(result?.error || "本地翻译未返回结果");
@@ -180,7 +181,12 @@
     const changedKeys = Object.keys(subtitleSettings).filter(key => config[key] !== next[key]);
     if (!changedKeys.length) return;
     config = next;
-    if (["enabled", "model", "context"].some(key => changedKeys.includes(key))) clear();
+    const languageChanged = changedKeys.includes("sourceLanguage") || changedKeys.includes("targetLanguage");
+    if (languageChanged) {
+      state.read = state.shown = state.cacheHits = 0;
+      state.samples = [];
+    }
+    if (languageChanged || ["enabled", "model", "context"].some(key => changedKeys.includes(key))) clear();
     sync();
     render();
   }

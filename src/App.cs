@@ -16,6 +16,8 @@ using Forms = System.Windows.Forms;
 internal sealed class Preferences
 {
     public string Model { get; set; }
+    public string SourceLanguageCode { get; set; }
+    public string TargetLanguageCode { get; set; }
     public string Font { get; set; }
     public string Color { get; set; }
     public int Size { get; set; }
@@ -26,10 +28,13 @@ internal sealed class Preferences
     public bool Context { get; set; }
     public bool FollowSubtitle { get; set; }
     public int TypographyVersion { get; set; }
+    internal bool SameLanguage { get { return SourceLanguageCode == TargetLanguageCode; } }
 
     public Preferences()
     {
         Model = LocalEngine.DefaultModel;
+        SourceLanguageCode = SubtitleLanguage.DefaultSource;
+        TargetLanguageCode = SubtitleLanguage.DefaultTarget;
         Font = SubtitleOverlay.DefaultFont;
         Color = "#FFFFFF";
         Size = 34;
@@ -176,7 +181,9 @@ internal sealed class ControlPanel : Window
         modelRow.Children.Add(reload);
         modelRow.Children.Add(models);
         AddRow(form, "AI 模型", modelRow);
-        var chineseOnly = new CheckBox { Content = "只显示中文字幕", IsChecked = config.ChineseOnly };
+        AddRow(form, "源字幕语言", LanguageChoice(config.SourceLanguageCode, code => config.SourceLanguageCode = code));
+        AddRow(form, "目标字幕语言", LanguageChoice(config.TargetLanguageCode, code => config.TargetLanguageCode = code));
+        var chineseOnly = new CheckBox { Content = "只显示译文", IsChecked = config.ChineseOnly };
         chineseOnly.Click += delegate
         {
             config.ChineseOnly = chineseOnly.IsChecked == true;
@@ -424,6 +431,31 @@ internal sealed class ControlPanel : Window
         }
     }
 
+    private ComboBox LanguageChoice(string code, Action<string> setLanguage)
+    {
+        var choice = new ComboBox
+        {
+            ItemsSource = SubtitleLanguage.Options, DisplayMemberPath = "Label",
+            SelectedValuePath = "Code", SelectedValue = code
+        };
+        choice.SelectionChanged += delegate
+        {
+            var selected = choice.SelectedValue as string;
+            if (selected == null) return;
+            setLanguage(selected);
+            if (requestCancel != null) requestCancel.Cancel();
+            previous.Clear();
+            received = hits = successes = 0;
+            latencies.Clear();
+            lastVisibleLatency = 0;
+            RestartCue();
+            Save();
+            UpdateStatus();
+            if (enabled && !config.ChineseOnly) RequestRead();
+        };
+        return choice;
+    }
+
     private void RestartCue()
     {
         InvalidateCue();
@@ -456,7 +488,7 @@ internal sealed class ControlPanel : Window
     private async Task Tick(bool immediate)
     {
         if (quitting || !enabled || reading) return;
-        if (config.ChineseOnly || desktopControl.Connected)
+        if (config.SameLanguage || config.ChineseOnly || desktopControl.Connected)
         {
             if (ticker.Interval != IdleInterval) ticker.Interval = IdleInterval;
             if (current != null)
@@ -520,7 +552,8 @@ internal sealed class ControlPanel : Window
             if (ticker.Interval != interval) ticker.Interval = interval;
             if (foreground && source.Length > 0 && chinese.Length == 0)
             {
-                string key = config.Model + "\n" + config.Context + "\n" + episode + "\n" + source;
+                string key = String.Join("\n", config.Model, config.SourceLanguageCode, config.TargetLanguageCode,
+                    config.Context.ToString(), episode, source);
                 string cached;
                 if (cache.TryGetValue(key, out cached))
                 {
@@ -596,7 +629,8 @@ internal sealed class ControlPanel : Window
         string model = config.Model;
         try
         {
-            string text = await engine.Translate(source, context, model, cancel.Token);
+            string text = await engine.Translate(source, context, model, cancel.Token,
+                config.SourceLanguageCode, config.TargetLanguageCode);
             recentModel = model;
             lastModelResponse = DateTime.UtcNow;
             if (!cache.ContainsKey(key))
@@ -634,7 +668,7 @@ internal sealed class ControlPanel : Window
     {
         Rect bounds = current == null ? Rect.Empty : current.Bounds;
         Rect captionBounds = current == null || !config.FollowSubtitle ? Rect.Empty : current.CaptionBounds;
-        string display = enabled && !config.ChineseOnly && !desktopControl.Connected &&
+        string display = enabled && !config.SameLanguage && !config.ChineseOnly && !desktopControl.Connected &&
             current != null && current.Window == NetflixReader.GetForegroundWindow()
             ? chinese : "";
         if (display == lastShown && bounds == lastBounds && captionBounds == lastCaptionBounds) return;
@@ -649,15 +683,16 @@ internal sealed class ControlPanel : Window
     {
         toggle.Content = enabled ? "停止翻译" : "开始翻译";
         readout.Text = !enabled ? "已停止"
-            : desktopControl.Connected ? (config.ChineseOnly ? "已连接 · 纯中文" : "已连接 · 中日双语")
-            : config.ChineseOnly ? (!desktopControl.IsListening ? "纯中文控制接口未启动"
+            : config.SameLanguage ? "源语言与目标语言相同 · 显示原字幕"
+            : desktopControl.Connected ? (config.ChineseOnly ? "已连接 · 仅译文" : "已连接 · 双语")
+            : config.ChineseOnly ? (!desktopControl.IsListening ? "字幕控制接口未启动"
                 : "等待 Netflix 字幕扩展连接。请打开或刷新播放页。")
             : current == null ? "等待 Netflix 官方应用进入播放页"
             : error.Length > 0 ? error : current.Window != NetflixReader.GetForegroundWindow() ? "已连接 · 切回 Netflix 继续翻译"
-            : source.Length == 0 ? "已连接 · 等待日文字幕"
+            : source.Length == 0 ? "已连接 · 等待原字幕"
             : chinese.Length == 0 ? "已读到字幕 · 翻译中" : "同步显示中";
         string placement = !config.FollowSubtitle ? "使用手动字幕位置"
-            : config.ChineseOnly ? "译文放在原字幕位置" : "译文显示在日文上方";
+            : config.ChineseOnly ? "译文放在原字幕位置" : "译文显示在原字幕上方";
         string playerStatus = enabled ? desktopControl.PlayerStatus : "";
         performance.Text = desktopControl.Connected ? placement +
             (playerStatus.Length == 0 ? "" : " · " + playerStatus) + "\n" + desktopControl.Statistics
@@ -690,6 +725,8 @@ internal sealed class ControlPanel : Window
             if (!File.Exists(SettingsFile)) return;
             var saved = new JavaScriptSerializer().Deserialize<Preferences>(File.ReadAllText(SettingsFile));
             config.Model = saved.Model ?? config.Model;
+            config.SourceLanguageCode = SubtitleLanguage.Find(saved.SourceLanguageCode, SubtitleLanguage.DefaultSource).Code;
+            config.TargetLanguageCode = SubtitleLanguage.Find(saved.TargetLanguageCode, SubtitleLanguage.DefaultTarget).Code;
             if (SubtitleOverlay.FontChoices.Contains(saved.Font) &&
                 !(saved.TypographyVersion == 0 && saved.Font == "Microsoft YaHei UI"))
                 config.Font = saved.Font;

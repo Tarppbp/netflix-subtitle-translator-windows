@@ -25,6 +25,7 @@ chrome.runtime = {
     const messages = {"こんにちは":"你好", "新しい字幕":"新的字幕", "次の話":"下一集", "一時停止":"暂停"};
     if (message.cue === "失敗") return {error:"测试断线"};
     await new Promise(resolve => setTimeout(resolve, message.cue === "遅い字幕" ? 320 : 15));
+    if (message.sourceLanguage === "en" && message.targetLanguage === "ja") return {text:"行こう。"};
     return {text: messages[message.cue] || "慢字幕"};
   }
 };
@@ -101,9 +102,14 @@ const isHidden = () => getComputedStyle(layer).opacity === "0";
   desktopSettings = {enabled:true, chineseOnly:true, followSubtitle:true};
   await sleep(760);
   assert(captionRoot.host.isConnected && getComputedStyle(replacement).opacity === "0", "desktop can resume");
+  desktopSettings = {...desktopSettings, sourceLanguage:"en", targetLanguage:"ja"};
+  replacement.firstElementChild.textContent = "Let's go.";
+  await sleep(660);
+  assert(calls.at(-1).sourceLanguage === "en" && calls.at(-1).targetLanguage === "ja" &&
+    calls.at(-1).context.length === 0 && captionRoot.textContent === "行こう。", "language change resets cue and context");
   desktopSettings = null;
   await sleep(370);
   assert(!captionRoot.host.isConnected && getComputedStyle(replacement).opacity === "1", "closing desktop restores original");
-  output.textContent = "PASS: desktop-only control, capture, seek, stale reply, pause, error reporting, original position, bilingual above, stop and disconnect";
+  output.textContent = "PASS: desktop control, rendered text, seek, stale replies, subtitle position, language switching and disconnect";
 })().catch(error => { output.textContent = "FAIL: " + error.message; });
 </script></html>

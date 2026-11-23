@@ -22,7 +22,7 @@ const server = createServer(async (request, response) => {
 const profile = await mkdtemp(join(tmpdir(), "subtitle-edge-fixture-"));
 try {
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
-  const browser = spawn(edge, ["--headless=new", "--no-first-run", "--dump-dom", "--virtual-time-budget=5500",
+  const browser = spawn(edge, ["--headless=new", "--no-first-run", "--dump-dom", "--virtual-time-budget=6400",
     "--user-data-dir=" + profile, "http://127.0.0.1:" + server.address().port + "/watch/1"],
     {windowsHide: true, stdio: ["ignore", "pipe", "pipe"]});
   let output = "", errors = "";

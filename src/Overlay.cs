@@ -19,7 +19,7 @@ internal sealed class SubtitleOverlay : Window
     private Rect previous;
     public SubtitleOverlay()
     {
-        Title = "Netflix 中文字幕浮层";
+        Title = "Netflix 译文浮层";
         AllowsTransparency = true;
         Background = Brushes.Transparent;
         WindowStyle = WindowStyle.None;
