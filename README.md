@@ -14,12 +14,12 @@
 | 项目 | 建议 |
 | --- | --- |
 | 系统 | Windows 11 x64。使用配套字幕扩展时需要 Microsoft Edge。 |
-| 显卡 | NVIDIA GeForce RTX 系列，建议 8 GB 或以上显存，并使用支持 CUDA 的 NVIDIA 驱动。 |
+| 显卡 | 建议从 NVIDIA GeForce RTX 4060（桌面版，8 GB）起步，或选择性能更高且显存至少 8 GB 的型号。使用支持 CUDA 的 NVIDIA 驱动。 |
 | 内存 | 建议 16 GB 或以上，给 Netflix、浏览器和本地模型留出空间。 |
 | 磁盘 | 建议预留至少 10 GB SSD 空间，包含安装时的临时文件、Ollama 和默认模型。 |
 | 模型 | 默认 `qwen3:4b-instruct`，首次下载约 2.5 GB。 |
 
-实测机器为 Core Ultra 9 285H、RTX 5060 Laptop 8 GB、32 GB 内存。默认模型在一次测试中约占 2.68 GiB 显存。这是配置建议，CPU 推理或低于推荐规格时的播放延迟还有待验证。 [测试报告](测试报告.md)
+RTX 4060 是推荐参考型号，其播放延迟尚未实测。实测机器为 Core Ultra 9 285H、RTX 5060 Laptop 8 GB、32 GB 内存。默认模型在一次测试中约占 2.68 GiB 显存。 [测试报告](测试报告.md)
 
 ## 安装
 

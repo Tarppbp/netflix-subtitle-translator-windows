@@ -13,12 +13,12 @@ Windows 11 で Netflix に表示された字幕を読み取り、PC 上の Ollam
 | 項目 | 推奨構成 |
 | --- | --- |
 | OS | Windows 11 x64。同梱の字幕拡張機能を使う場合は Microsoft Edge が必要です。 |
-| GPU | NVIDIA GeForce RTX、VRAM 8 GB 以上、CUDA 対応の NVIDIA ドライバー。 |
+| GPU | NVIDIA GeForce RTX 4060（デスクトップ版、8 GB）、または VRAM 8 GB 以上の上位モデルを推奨します。CUDA 対応の NVIDIA ドライバーを使用してください。 |
 | メモリ | Netflix、ブラウザー、ローカルモデルの動作に 16 GB 以上を推奨します。 |
 | ストレージ | インストール用の一時ファイル、Ollama、既定モデル用に SSD の空き容量 10 GB 以上を推奨します。 |
 | モデル | 既定は `qwen3:4b-instruct`。初回のモデルダウンロードは約 2.5 GB です。 |
 
-検証環境は Core Ultra 9 285H、RTX 5060 Laptop GPU（VRAM 8 GB）、メモリ 32 GB です。既定モデルは測定時に約 2.68 GiB の VRAM を使用しました。CPU 推論や推奨構成を下回る PC での再生中の遅延は未検証です。 [テスト報告（中国語）](测试报告.md)
+RTX 4060 は推奨の目安です。この GPU での再生中の遅延は未測定です。検証環境は Core Ultra 9 285H、RTX 5060 Laptop GPU（VRAM 8 GB）、メモリ 32 GB です。既定モデルは測定時に約 2.68 GiB の VRAM を使用しました。 [テスト報告（中国語）](测试报告.md)
 
 ## 使い方
 
