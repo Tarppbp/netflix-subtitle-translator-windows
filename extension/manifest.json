@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Netflix 日语字幕本地翻译",
+  "version": "0.1.5",
+  "description": "接收 Windows 桌面控制面板的设置，在 Netflix 内显示本地翻译。",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx1hf75fZV/a0Z8sf+S6nyQsDHbKux0nS/8GhUv+8XIb+VTXX9uQ0r6sbEHZO1bG89M8YChdslsS+b8WtQriI8QwsbobzQ2X6r0cbkenRDSycGn3TU0zzddFDFwlIleYpvqOL8kyiEy1Jy6mPbD1uIbmaQSMX8phxzEXZN4rSq20cN+JriFAw3jJHbhAsRgeNE8FyeQEpEjpPQns1UZff2okBnV3mK7ifEFbFyeXUa2GJFZe5MttEWtT/e8V617jCB0LvlWd+EQavDTKmtvFYRoWcsx1/kk2vDV3RuSyEGLbOW6zuLWvo7y77T19wh+MgO2tstl7aDKNAINjZjwDK2QIDAQAB",
+  "host_permissions": [
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.netflix.com/*"
+      ],
+      "js": [
+        "settings.js",
+        "player.js"
+      ],
+      "css": [
+        "player.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><title>Subtitle fixture</title>
+<video style="width:800px;height:420px"></video>
+<div class="player-timedtext"><div class="player-timedtext-text-container">こんにちは</div></div>
+<pre id="result">RUNNING</pre>
+<script>
+let desktopSettings = null;
+let reportedPhase;
+let captionRoot;
+const calls = [];
+const attach = Element.prototype.attachShadow;
+Element.prototype.attachShadow = function(options) {
+  const shadow = attach.call(this, options);
+  if (this.getAttribute("aria-live") === "off") captionRoot = shadow;
+  return shadow;
+};
+window.chrome ??= {};
+chrome.runtime = {
+  id: "fixture",
+  async sendMessage(message) {
+    if (message.type === "desktopSettings") {
+      reportedPhase = message.phase;
+      return {desktop:desktopSettings};
+    }
+    calls.push(message);
+    const messages = {"こんにちは":"你好", "新しい字幕":"新的字幕", "次の話":"下一集", "一時停止":"暂停"};
+    if (message.cue === "失敗") return {error:"测试断线"};
+    await new Promise(resolve => setTimeout(resolve, message.cue === "遅い字幕" ? 320 : 15));
+    return {text: messages[message.cue] || "慢字幕"};
+  }
+};
+</script>
+<script src="/settings.js"></script>
+<script src="/player.js"></script>
+<link rel="stylesheet" href="/player.css">
+<script>
+const layer = document.querySelector(".player-timedtext");
+const subtitle = layer.firstElementChild;
+const video = document.querySelector("video");
+const output = document.querySelector("#result");
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+const isHidden = () => getComputedStyle(layer).opacity === "0";
+(async () => {
+  await sleep(90);
+  assert(calls.length === 0 && !isHidden(), "renderer is inactive without desktop");
+  desktopSettings = {enabled:true, chineseOnly:false, followSubtitle:true};
+  await sleep(360);
+  assert(calls.length === 1 && calls[0].cue === "こんにちは", "initial rendered text");
+  assert(!isHidden() && captionRoot.textContent === "你好", "bilingual preserves native layer");
+  subtitle.textContent = "遅い字幕";
+  await sleep(110);
+  assert(!isHidden(), "source visible during translation");
+  subtitle.textContent = "新しい字幕";
+  await sleep(460);
+  assert(calls.at(-1).cue === "新しい字幕" && captionRoot.textContent === "新的字幕", "latest cue after slow translation");
+  video.dispatchEvent(new Event("seeking"));
+  assert(!captionRoot.host.isConnected && !isHidden(), "seek immediately clears overlay");
+  subtitle.textContent = "一時停止";
+  video.dispatchEvent(new Event("seeked"));
+  await sleep(150);
+  assert(calls.at(-1).cue === "一時停止" && captionRoot.textContent === "暂停", "post-seek cue");
+  video.dispatchEvent(new Event("pause"));
+  assert(captionRoot.host.isConnected && !isHidden(), "pause keeps visible translated cue");
+  history.pushState({}, "", "/watch/2");
+  subtitle.textContent = "次の話";
+  await sleep(400);
+  assert(calls.at(-1).episode === "2" && calls.at(-1).context.length === 0, "episode resets context");
+  subtitle.textContent = "失敗";
+  await sleep(460);
+  assert(!isHidden() && reportedPhase === "error", "failure leaves original visible and reports to desktop");
+  desktopSettings = {enabled:true, chineseOnly:true, followSubtitle:true};
+  await sleep(370);
+  assert(isHidden(), "strict mode hides original even after a failure");
+  subtitle.textContent = "遅い字幕";
+  await sleep(110);
+  assert(isHidden(), "strict mode hides original during model wait");
+  await sleep(350);
+  assert(captionRoot.textContent === "慢字幕" && isHidden(), "strict mode overrides bilingual text");
+  const replacement = layer.cloneNode(true);
+  layer.replaceWith(replacement);
+  assert(getComputedStyle(replacement).opacity === "0", "replacement subtitle layer stays hidden");
+  Object.defineProperty(document, "fullscreenElement", {configurable:true, value:video});
+  document.dispatchEvent(new Event("fullscreenchange"));
+  assert(getComputedStyle(replacement).opacity === "1", "video-only fullscreen restores native subtitles");
+  delete document.fullscreenElement;
+  document.dispatchEvent(new Event("fullscreenchange"));
+  assert(getComputedStyle(replacement).opacity === "0", "exiting video-only fullscreen restores strict mode");
+  await sleep(270);
+  const sourceRange = document.createRange();
+  sourceRange.selectNodeContents(replacement.firstElementChild);
+  const original = sourceRange.getBoundingClientRect();
+  assert(Math.abs(parseFloat(captionRoot.host.style.bottom) - (innerHeight - original.bottom)) < 1, "Chinese only uses official subtitle bottom");
+  assert(Math.abs(parseFloat(captionRoot.host.style.left) - (original.left + original.width / 2)) < 1, "Chinese uses official subtitle horizontal center");
+  desktopSettings = {enabled:true, chineseOnly:false, followSubtitle:true};
+  await sleep(370);
+  assert(getComputedStyle(replacement).opacity === "1", "desktop bilingual restores native Japanese");
+  assert(Math.abs(parseFloat(captionRoot.host.style.bottom) - (innerHeight - original.top + 8)) < 1, "desktop bilingual puts Chinese above Japanese");
+  desktopSettings = {enabled:false, chineseOnly:true, followSubtitle:true};
+  await sleep(370);
+  assert(!captionRoot.host.isConnected && getComputedStyle(replacement).opacity === "1", "desktop stop removes translations and restores native");
+  desktopSettings = {enabled:true, chineseOnly:true, followSubtitle:true};
+  await sleep(760);
+  assert(captionRoot.host.isConnected && getComputedStyle(replacement).opacity === "0", "desktop can resume");
+  desktopSettings = null;
+  await sleep(370);
+  assert(!captionRoot.host.isConnected && getComputedStyle(replacement).opacity === "1", "closing desktop restores original");
+  output.textContent = "PASS: desktop-only control, capture, seek, stale reply, pause, error reporting, original position, bilingual above, stop and disconnect";
+})().catch(error => { output.textContent = "FAIL: " + error.message; });
+</script></html>
